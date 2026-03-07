@@ -8,6 +8,7 @@ project_root = os.path.dirname(current_dir)
 sys.path.append(project_root)
 
 from src.tasks.load import get_test_task
+from src import Define
 try:
     from openai import OpenAI
 except ImportError:
@@ -84,14 +85,14 @@ Assign the FIRST state that fits the description and ignore subsequent categorie
 """
 
 class LLMJudgeWrapper:
-    def __init__(self, mode: str = "api", api_key: str = None):
+    def __init__(self, mode: str = "api"):
         self.mode = mode
         
         if self.mode == "api":
             self.model_name = "gpt-4o-2024-11-20"
             if OpenAI is None:
                 raise ImportError("Please install openai package: pip install openai")
-            self.client = OpenAI(api_key=api_key or os.environ.get("OPENAI_API_KEY"))
+            self.client = OpenAI(api_key=Define.API_KEY)
         elif self.mode == "local":
             self.model_name = "meta-llama/Meta-Llama-3.1-8B-Instruct"
             print(f"--- Loading Local Model: {self.model_name} on A6000 (CUDA) ---")
@@ -204,7 +205,7 @@ def parse_prediction_file(filepath: str) -> Dict[str, dict]:
                     else: data[current_id]['text'] += '\n'
     return data
 
-def main_analyze_file(input_path, output_jsonl, task_name, mode, api_key=None):
+def main_analyze_file(input_path, output_jsonl, task_name, mode):
     print(f"1. Loading File: {input_path}")
     data = parse_prediction_file(input_path)
     print(f"   Found {len(data)} samples.")
@@ -215,7 +216,7 @@ def main_analyze_file(input_path, output_jsonl, task_name, mode, api_key=None):
         question, _id = sample["text_input"], sample["id"]
         question_dict[_id] = question
 
-    llm = LLMJudgeWrapper(mode=mode, api_key=api_key)
+    llm = LLMJudgeWrapper(mode=mode)
     
     processed_ids = set()
     
@@ -253,7 +254,7 @@ def main_analyze_file(input_path, output_jsonl, task_name, mode, api_key=None):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python analyze_state.py <input_result.txt> <output_states.jsonl> <api_key>")
+        print("Usage: python analyze_state.py <input_result.txt> <output_states.jsonl> <task_name> <mode>")
         sys.exit(1)
 
     INPUT_FILE = sys.argv[1]
@@ -261,15 +262,7 @@ if __name__ == "__main__":
     TASK_NAME = sys.argv[3]
     MODE = sys.argv[4]
     
-    API_KEY = None
-    if MODE == "api":
-        if len(sys.argv) > 5:
-            API_KEY = sys.argv[5]
-        else:
-            print("Error: API mode requires an API Key.")
-            sys.exit(1)
-    
     if os.path.exists(INPUT_FILE):
-        main_analyze_file(INPUT_FILE, OUTPUT_FILE, TASK_NAME, MODE, api_key=API_KEY)
+        main_analyze_file(INPUT_FILE, OUTPUT_FILE, TASK_NAME, MODE)
     else:
         print(f"File not found: {INPUT_FILE}")
