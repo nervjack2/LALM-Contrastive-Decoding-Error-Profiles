@@ -7,7 +7,7 @@ from tqdm import tqdm
 from scipy.io import wavfile
 
 from src import Define
-from .utils import extract_mcqa_answer, llm_as_judge, LLMJudgeWrapper
+from .utils import llm_as_judge, LLMJudgeWrapper
 
 
 class MMAU_MINI(object):
@@ -86,13 +86,5 @@ class MMAUMINIMCQASequence(Dataset):
         }
         return inst
     
-    def extract_answer(self, response: str):
-        return extract_mcqa_answer(response=response, key="The answer is")
-    
     def eval(self, pred: str, gt: str, question: str = "") -> float:
         return llm_as_judge(pred=pred, gt=gt, llm=self.llm, question=question)
-
-
-class MMAUMINIMCQA_RSequence(Dataset):
-    def __new__(cls):
-        return MMAUMINIMCQASequence()

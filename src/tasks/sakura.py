@@ -9,7 +9,7 @@ from scipy.io import wavfile
 import random
 
 from src import Define
-from .utils import extract_mcqa_answer, llm_as_judge, LLMJudgeWrapper
+from .utils import llm_as_judge, LLMJudgeWrapper
 
 class SAKURA(object):
 
@@ -112,9 +112,6 @@ class SAKURASequence(Dataset):
         full_prompt = inst["text_input"]
         inst["text_input"] = self.task_description + full_prompt
         return inst
-    
-    def extract_answer(self, response: str):
-        return extract_mcqa_answer(response=response, key="The answer is")
     
     def eval(self, pred: str, gt: str, question: str = "") -> float:
         """
