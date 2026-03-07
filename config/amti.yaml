@@ -1,5 +1,5 @@
-lim:
+amti:
   omega: 2.0
   tau: 1.0
-  negative_prompt: "Output Error"
+  negative_prompt: "Ignore Audio"
   position: after

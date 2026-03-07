@@ -61,10 +61,6 @@ class MMAUMINIMCQASequence(Dataset):
         )
 
 
-    @property
-    def task_description(self):
-        return ""
-    
     def __len__(self):
         return len(self.corpus)
 
@@ -80,7 +76,7 @@ class MMAUMINIMCQASequence(Dataset):
         inst = {
             "id": sample['id'],
             "audio_input": sample['audio_input'],
-            "text_input": self.task_description + full_prompt,
+            "text_input": full_prompt,
             "output": output.lower(),
             "audio_path": f"{self.corpus.cache_dir}/wav/{sample['id']}.wav"
         }

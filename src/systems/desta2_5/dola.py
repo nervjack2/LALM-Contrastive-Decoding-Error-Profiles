@@ -15,15 +15,12 @@ class DoLASystem(Desta2_5System):
             assert 0 <= layer_idx < self.num_layers, f"layer {layer_idx} out of bound."
         self.final_norm = self.model.llm_model.model.norm
         self.lm_head = self.model.llm_model.lm_head
-        # print(self.num_layers, self.candidate_layers)
-        # print(self.model.llm_model)
 
     def _forward_hook_fn(self, layer_idx):
         """
         Hook function to capture the output hidden state of a specific layer.
         """
         def hook(module, input, output):
-            # print(output, layer_idx, output.shape, type(output))
             hidden_states = output
             self.captured_states[layer_idx] = hidden_states[:, -1:, :].detach()
         return hook
@@ -63,7 +60,6 @@ class DoLASystem(Desta2_5System):
 
         # prepare inputs
         transcriptions = self.model.prepare_transcriptions(audios, [None])
-        # print(transcriptions)
 
         prompts = [
             self.format_prompt(audio, transcription, text)
@@ -76,15 +72,11 @@ class DoLASystem(Desta2_5System):
             padding=True
         ).to(self.device)
 
-        # print(inputs)
         
         self.register_dola_hooks()
         
         dola_processor = self.prepare_logits_processor()
 
-        # text-only generation
-        # Note that since we unify all modalities by using input_embeds implicity,
-        # output_ids does not contain input_ids as usual
         output_ids = self.model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
@@ -92,12 +84,9 @@ class DoLASystem(Desta2_5System):
             pad_token_id=self.tokenizer.pad_token_id,
             logits_processor=[dola_processor],
         )
-        # output_ids = output_ids[:, inputs["input_ids"].size(1):]
 
         self.remove_hooks()
-        # print(output_ids)
         prediction = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
-        # print(prediction)
 
         del dola_processor
         torch.cuda.empty_cache()

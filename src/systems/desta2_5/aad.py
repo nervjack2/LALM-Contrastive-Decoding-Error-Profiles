@@ -10,7 +10,6 @@ from .desta2_5 import Desta2_5System
 class AADSystem(Desta2_5System):
     def __init__(self, config):
         super().__init__(config)
-        # Load AAD specific parameters from config or use defaults
         aad_config = self.model_config.get("aad", {})
         self.alpha = aad_config.get("alpha", 0.5)
         self.threshold = aad_config.get("threshold", -1) 
@@ -59,9 +58,7 @@ class AADSystem(Desta2_5System):
     def inference(self, audios: list[np.ndarray], texts: list[str], ids: list[str], max_new_tokens: int = 512) -> dict:
         assert len(texts) == 1, "Currently no batch inference"
         
-        # prepare inputs
         transcriptions = self.model.prepare_transcriptions(audios, [None])
-        # print(transcriptions)
 
         prompts = [
             self.format_prompt(audio, transcription, text)
@@ -81,22 +78,18 @@ class AADSystem(Desta2_5System):
         ).to(self.device)
         
         # 3. Generate with AAD
-        # The logits processor will intercept generation steps and subtract the no-audio logits
         output_ids = self.model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
-            do_sample=False,  # AAD is typically used with greedy/beam search
+            do_sample=False, 
             pad_token_id=self.tokenizer.pad_token_id,
             logits_processor=[aad_logits_processor]
         )
         
-        # Decode prediction
         prediction = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
 
-        # Statistics for debugging/analysis
         step_all, step_applied = aad_logits_processor.call_cnt, aad_logits_processor.apply_cnt
         
-        # Cleanup to prevent VRAM leaks
         del aad_logits_processor
         torch.cuda.empty_cache()
 

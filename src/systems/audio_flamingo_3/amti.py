@@ -1,14 +1,14 @@
 import torch
-from src.systems.generation.logits_process import LIMLogitsProcessor
+from src.systems.generation.logits_process import AMTILogitsProcessor
 from .audio_flamingo_3 import AudioFlamingo3System
 
-class LIMSystem(AudioFlamingo3System):
+class AMTISystem(AudioFlamingo3System):
     def __init__(self, config):
         super().__init__(config)
-        self.lim_config = self.model_config.get("lim", {})
-        self.omega = self.lim_config.get("omega", 2.0)
-        self.tau = self.lim_config.get("tau", 1.0)
-        self.negative_prompt = self.lim_config.get("negative_prompt", "Output Error")
+        self.amti_config = self.model_config.get("amti", {})
+        self.omega = self.amti_config.get("omega", 2.0)
+        self.tau = self.amti_config.get("tau", 1.0)
+        self.negative_prompt = self.amti_config.get("negative_prompt", "Output Error")
         self.negative_prompt_tokens = self.processor(
             text=[self.negative_prompt],
             add_special_tokens=False,
@@ -16,8 +16,8 @@ class LIMSystem(AudioFlamingo3System):
             padding=True,
         ).to(self.device)["input_ids"]
 
-    def prepare_logits_processor(self, inputs) -> LIMLogitsProcessor:
-        return LIMLogitsProcessor(
+    def prepare_logits_processor(self, inputs) -> AMTILogitsProcessor:
+        return AMTILogitsProcessor(
             model=self.model,
             inputs=inputs,
             negative_prompt_tokens=self.negative_prompt_tokens, 
@@ -27,7 +27,7 @@ class LIMSystem(AudioFlamingo3System):
 
     @torch.inference_mode()
     def inference(self, audios: list, texts: list[str], ids: list[str], max_new_tokens: int = 512) -> dict:
-        assert len(texts) == 1, "Batch size 1 recommended for LIM"
+        assert len(texts) == 1, "Batch size 1 recommended for AMTI"
 
         # 1. Prepare Inputs (With Audio) - This is the standard path
         conversation = self.format_conversation(
@@ -43,14 +43,14 @@ class LIMSystem(AudioFlamingo3System):
         ).to(self.device)
 
         # 2. Prepare Logits Processor
-        lim_processor = self.prepare_logits_processor(inputs)
+        amti_processor = self.prepare_logits_processor(inputs)
 
         # 3. Generate
         output_ids = self.model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
             do_sample=False,
-            logits_processor=[lim_processor] # Inject LIM
+            logits_processor=[amti_processor] # Inject AMTI
         )
 
         # 4. Decode
@@ -58,7 +58,7 @@ class LIMSystem(AudioFlamingo3System):
         prediction = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
         
         # Clean up
-        del lim_processor
+        del amti_processor
         torch.cuda.empty_cache()
 
         return {

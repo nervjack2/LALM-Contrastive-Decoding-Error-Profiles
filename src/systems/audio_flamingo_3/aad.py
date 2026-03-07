@@ -10,7 +10,6 @@ class AADSystem(AudioFlamingo3System):
         self.threshold = self.model_config.get("aad_threshold", -1)
 
     def prepare_logits_processor(self, texts) -> AADLogitsProcessor:
-        # Prepare Negative Inputs (Text Only - Remove Audio from conversation)
         neg_conversation = self.format_conversation( # No Audio Input
             texts[0]
         )
@@ -20,8 +19,6 @@ class AADSystem(AudioFlamingo3System):
             add_generation_prompt=True,
             return_dict=True,
         ).to(self.device)
-        # print(neg_inputs)
-        # print(self.processor.batch_decode(neg_inputs["input_ids"]))
 
         return AADLogitsProcessor(
             model=self.model,
@@ -34,7 +31,6 @@ class AADSystem(AudioFlamingo3System):
     def inference(self, audios: list, texts: list[str], ids: list[str], max_new_tokens: int = 512) -> dict:
         assert len(texts) == 1, "Batch size 1 recommended for AAD"
 
-        # 1. Prepare Positive Inputs (With Audio)
         conversation = self.format_conversation(
             texts[0], 
             ids[0]
@@ -45,12 +41,9 @@ class AADSystem(AudioFlamingo3System):
             add_generation_prompt=True,
             return_dict=True,
         ).to(self.device)
-        # print(self.processor.batch_decode(inputs["input_ids"]))
-
-        # 2. Prepare Logits Processor (Handles Negative Stream internally)
+  
         aad_processor = self.prepare_logits_processor(texts)
         
-        # 3. Generate
         output_ids = self.model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
@@ -58,11 +51,9 @@ class AADSystem(AudioFlamingo3System):
             logits_processor=[aad_processor] # Inject AAD
         )
 
-        # 4. Decode
         generated_ids = output_ids[:, inputs["input_ids"].shape[1]:]
         prediction = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
         
-        # Clean up
         step_all, step_applied = aad_processor.call_cnt, aad_processor.apply_cnt
         del aad_processor
         torch.cuda.empty_cache()

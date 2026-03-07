@@ -23,7 +23,6 @@ class AADBeam(object):
         self.data["input_ids"] = torch.cat([self.data["input_ids"], new_token.unsqueeze(-1)], dim=-1)
         self.data_neg["input_ids"] = torch.cat([self.data_neg["input_ids"], new_token.unsqueeze(-1)], dim=-1)
 
-        # Update attention_mask if present
         if "attention_mask" in self.data:
             new_mask = torch.ones((self.data["attention_mask"].shape[0], 1), device=new_token.device, dtype=self.data["attention_mask"].dtype)
             self.data["attention_mask"] = torch.cat([self.data["attention_mask"], new_mask], dim=-1)

@@ -70,8 +70,6 @@ class ACDSystem(AudioFlamingo3System):
         acd_processor = self.prepare_logits_processor(texts, audios)
 
         # 3. Generate
-        # The model uses 'inputs' (Positive) as the main driver.
-        # 'acd_processor' intercepts logits and subtracts the distorted signal.
         output_ids = self.model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,

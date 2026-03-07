@@ -15,15 +15,12 @@ class DoLASystem(AudioFlamingo3System):
             assert 0 <= layer_idx < self.num_layers, f"layer {layer_idx} out of bound."
         self.final_norm = self.model.language_model.model.norm
         self.lm_head = self.model.language_model.lm_head
-        # print(self.num_layers, self.candidate_layers)
-        # print(self.model.language_model)
 
     def _forward_hook_fn(self, layer_idx):
         """
         Hook function to capture the output hidden state of a specific layer.
         """
         def hook(module, input, output):
-            # print(output, layer_idx, output.shape)
             hidden_states = output
             self.captured_states[layer_idx] = hidden_states[:, -1:, :].detach()
         return hook
@@ -61,7 +58,6 @@ class DoLASystem(AudioFlamingo3System):
     def inference(self, audios: list, texts: list[str], ids: list[str], max_new_tokens: int = 512) -> dict:
         assert len(texts) == 1, "Batch size 1 recommended for DoLa"
 
-        # 1. Format Inputs (Standard AF3 flow)
         conversation = self.format_conversation(texts[0], ids[0])
         
         inputs = self.processor.apply_chat_template(
@@ -70,15 +66,11 @@ class DoLASystem(AudioFlamingo3System):
             add_generation_prompt=True,
             return_dict=True,
         ).to(self.device)
-        # print(inputs)
 
-        # 2. Register DoLa Hooks
         self.register_dola_hooks()
         
-        # 3. Prepare Logits Processor
         dola_processor = self.prepare_logits_processor()
         
-        # 4. Generate
         output_ids = self.model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
@@ -88,7 +80,6 @@ class DoLASystem(AudioFlamingo3System):
 
         self.remove_hooks()
 
-        # 6. Decode
         generated_ids = output_ids[:, inputs["input_ids"].shape[1]:]
 
         prediction = self.processor.batch_decode(generated_ids, skip_special_tokens=True)[0]

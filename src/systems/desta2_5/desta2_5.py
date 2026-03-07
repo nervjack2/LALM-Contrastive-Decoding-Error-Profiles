@@ -60,7 +60,6 @@ class Desta2_5System(System):
                 }]
             })
         prompt = self.processor.apply_chat_template(conversation, add_generation_prompt=True)
-        # print(prompt)
         
         return prompt
 
@@ -70,7 +69,6 @@ class Desta2_5System(System):
         
         # prepare inputs
         transcriptions = self.model.prepare_transcriptions(audios, [None])
-        # print(transcriptions)
 
         prompts = [
             self.format_prompt(audio, transcription, text)
@@ -83,16 +81,12 @@ class Desta2_5System(System):
             padding=True
         ).to(self.device)
         
-        # text-only generation
-        # Note that since we unify all modalities by using input_embeds implicity,
-        # output_ids does not contain input_ids as usual
         output_ids = self.model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
             do_sample=False,
             pad_token_id=self.tokenizer.pad_token_id,
         )
-        # output_ids = output_ids[:, inputs["input_ids"].size(1):]
 
         prediction = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)[0]
 

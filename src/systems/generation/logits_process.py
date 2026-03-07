@@ -183,7 +183,7 @@ class VCDLogitsProcessor(ContrastiveLogitsProcessor):
         return modified_logits
 
 
-class LIMLogitsProcessor(LogitsProcessor):
+class AMTILogitsProcessor(LogitsProcessor):
     def __init__(
         self,
         model,
@@ -237,7 +237,7 @@ class LIMLogitsProcessor(LogitsProcessor):
         if entropy <= self.tau:
             return scores
         
-        # LIM
+        # AMTI
         with torch.no_grad():
             bs = input_ids.shape[0]
             assert bs == 1, "currently does not support batch inference"

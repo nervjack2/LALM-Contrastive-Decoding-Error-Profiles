@@ -100,17 +100,13 @@ class SAKURASequence(Dataset):
             api_key=Define.API_KEY if judge_mode == "api" else None
         )
 
-    @property
-    def task_description(self):
-        return ""
-    
     def __len__(self):
         return len(self.corpus)
     
     def __getitem__(self, idx):
         inst = self.corpus.get(self.idx_seq[idx])
         full_prompt = inst["text_input"]
-        inst["text_input"] = self.task_description + full_prompt
+        inst["text_input"] = full_prompt
         return inst
     
     def eval(self, pred: str, gt: str, question: str = "") -> float:

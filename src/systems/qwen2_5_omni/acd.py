@@ -41,8 +41,6 @@ class ACDSystem(Qwen2_5OmniSystem):
         """
         Prepares the secondary inputs (distorted audio) and initializes the processor.
         """
-        # Encode the distorted input (v', x)
-        # We use the same prompt text, but with noisy audio
         inputs_distorted = self.processor(
             text=prompts, 
             audio=audios_distorted, 

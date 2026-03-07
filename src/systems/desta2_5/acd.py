@@ -24,9 +24,8 @@ class ACDSystem(Desta2_5System):
         """
         # Ensure audio is float for noise addition
         if audio.dtype != np.float32 and audio.dtype != np.float64:
-            audio = audio.astype(np.float32) / 32768.0 # Normalize if PCM16
+            audio = audio.astype(np.float32) / 32768.0
 
-        # Initialize v_0
         v_0 = audio.copy()
 
         # Apply the closed-form formula
@@ -43,7 +42,6 @@ class ACDSystem(Desta2_5System):
         transcriptions: list[str],
         texts: list[str],
     ) -> VCDLogitsProcessor:
-        # create negative context
         audio_neg = [self.apply_noise(a) for a in audios]
         transcription_neg = self.model.prepare_transcriptions(audio_neg, [None])
         prompts_neg = [
@@ -74,7 +72,6 @@ class ACDSystem(Desta2_5System):
 
         # prepare inputs
         transcriptions = self.model.prepare_transcriptions(audios, [None])
-        # print(transcriptions)
 
         prompts = [
             self.format_prompt(audio, transcription, text)
