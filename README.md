@@ -55,8 +55,8 @@ python run_benchmark.py -o test -s qwen-dola -t mmau-test-mini-ja --model_config
 #### Config Files
 
 Decoding method configs are under `config/`:
-- `aad.yaml` — AAD (Audio-Anchored Decoding)
-- `acd.yaml` — ACD (Audio Contrastive Decoding)
+- `aad.yaml` — AAD 
+- `acd.yaml` — ACD
 - `amti.yaml` — AMTI
 - `dola.yaml` — DoLA
 
