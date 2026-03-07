@@ -46,66 +46,24 @@ class MMAU_MINI(object):
 
 
 class MMAUMINIMCQASequence(Dataset):
-    def __init__(self, reasoning: bool=False, llm_judge: bool=False, judge_mode: str="", prompt_mode: str="") -> None:
-        self.reasoning = reasoning
-        self.llm_judge = llm_judge
+    def __init__(self, judge_mode: str="") -> None:
         self.corpus = MMAU_MINI()
         self.idx_seq = list(range(len(self.corpus)))
-        if self.llm_judge:
-            if judge_mode == 'api':
-                judge_model_name = 'gpt-4o-2024-11-20'
-            elif judge_mode == 'local':
-                judge_model_name = "microsoft/Phi-3.5-mini-instruct"
-            # Initialize LLM here
-            self.llm = LLMJudgeWrapper(
-                mode=judge_mode,
-                model_name=judge_model_name,
-                api_key=Define.API_KEY if judge_mode == "api" else None
-            )
-            self.prompt_mode = prompt_mode
+        if judge_mode == 'api':
+            judge_model_name = 'gpt-4o-2024-11-20'
+        elif judge_mode == 'local':
+            judge_model_name = "microsoft/Phi-3.5-mini-instruct"
+        # Initialize LLM here
+        self.llm = LLMJudgeWrapper(
+            mode=judge_mode,
+            model_name=judge_model_name,
+            api_key=Define.API_KEY if judge_mode == "api" else None
+        )
 
 
     @property
     def task_description(self):
-        if self.reasoning:
-            if not self.llm_judge:
-                prompt = (
-                    "Answer the multiple-choice question. After any step-by-step reasoning, "
-                    "put the final answer on the last line exactly in the format 'The answer is x.' (x is a single lowercase letter a, b, c, ...). "
-                    "Do not include any other text on that final line."
-                )
-            else:
-                if self.prompt_mode == "cot":
-                    prompt = (
-                        "Please answer the following multiple-choice question. "
-                        "You must think step-by-step to analyze the options first, and then provide the final answer. "
-                        "Answer with 'x', where x is the right letter in lowercase. "
-                        # "If you are really unsure about the answer, just make a guess; do not leave it unanswered."
-                    )
-                elif self.prompt_mode == "cot-a":
-                    prompt = (
-                        "You are a helpful sound assistant that can hear the given audio. "
-                        "Based on the audio, please answer the following multiple-choice question. "
-                        "You must think step-by-step to analyze the options first, and then provide the final answer. "
-                        "Answer with 'x', where x is the right letter in lowercase. "
-                    )
-                elif self.prompt_mode == "regular":
-                    prompt = ""
-                elif self.prompt_mode == "regular-a":
-                    prompt = (
-                        "You are a helpful sound assistant that can hear the given audio. "
-                        "Based on the audio, please answer the following multiple-choice question. "
-                    )
-                elif self.prompt_mode == "direct":
-                    prompt = (
-                        "Answer the multiple-choice question. Answer with 'x', where x is the right letter in lowercase. Only output the letter of your answer."
-                    )
-                else:
-                    print(f"Prompt mode {self.prompt_mode} not supported.")
-                    exit(0)
-        else:
-            prompt = "Answer the multiple-choice question. Answer with 'X', where X is the right letter in uppercase. Only output the letter of your answer."
-        return prompt
+        return ""
     
     def __len__(self):
         return len(self.corpus)
@@ -119,35 +77,22 @@ class MMAUMINIMCQASequence(Dataset):
             full_prompt += f"\n{chr(65 + idx)}. {choice}"
         output = chr(65 + sample["choices"].index(sample["answer"]))
         
-        if self.prompt_mode != "regular":
-            inst = {
-                "id": sample['id'],
-                "audio_input": sample['audio_input'],
-                "text_input": self.task_description + "\n\n" + full_prompt,
-                "output": output.lower(),
-                "audio_path": f"{self.corpus.cache_dir}/wav/{sample['id']}.wav"
-            }
-        else:
-            inst = {
-                "id": sample['id'],
-                "audio_input": sample['audio_input'],
-                "text_input": self.task_description + full_prompt,
-                "output": output.lower(),
-                "audio_path": f"{self.corpus.cache_dir}/wav/{sample['id']}.wav"
-            }
+        inst = {
+            "id": sample['id'],
+            "audio_input": sample['audio_input'],
+            "text_input": self.task_description + full_prompt,
+            "output": output.lower(),
+            "audio_path": f"{self.corpus.cache_dir}/wav/{sample['id']}.wav"
+        }
         return inst
     
     def extract_answer(self, response: str):
-        return extract_mcqa_answer(response=response, key="The answer is" if self.reasoning else None)
+        return extract_mcqa_answer(response=response, key="The answer is")
     
     def eval(self, pred: str, gt: str, question: str = "") -> float:
-        if not self.llm_judge:
-            ans = self.extract_answer(pred)
-            return float(ans == gt)
-        else:
-            return llm_as_judge(pred=pred, gt=gt, llm=self.llm, question=question)
+        return llm_as_judge(pred=pred, gt=gt, llm=self.llm, question=question)
 
 
 class MMAUMINIMCQA_RSequence(Dataset):
     def __new__(cls):
-        return MMAUMINIMCQASequence(reasoning=True)
+        return MMAUMINIMCQASequence()
