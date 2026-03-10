@@ -20,7 +20,7 @@ Results will be logged under `results/[system_name]/[output_name]/[task_name]/`.
 | Model | System Names |
 |---|---|
 | Qwen2.5-Omni | `qwen`, `qwen-aad`, `qwen-acd`, `qwen-amti`, `qwen-dola` |
-| Desta2.5 | `desta`, `desta-official`, `desta-aad`, `desta-acd`, `desta-amti`, `desta-dola` |
+| Desta2.5 | `desta`, `desta-aad`, `desta-acd`, `desta-amti`, `desta-dola` |
 | Audio Flamingo 3 | `af3`, `af3-aad`, `af3-acd`, `af3-amti`, `af3-dola` |
 
 #### Available Tasks
